@@ -43,15 +43,21 @@ discover_server_port(){
 }
 
 # Write a small heartbeat string to the tty where hermes runs.
-# hermes PID (17522) is on pts/0; we prefer to hit the same pty if possible.
+# Prefer the controlling terminal of the INTERACTIVE hermes process (the one
+# attached to a tty), skipping gateway/dashboard which are headless. No PID is
+# hardcoded — discovered at runtime so it stays portable across rebuilds/CI.
 write_terminal_heartbeat(){
-  # Use the controlling terminal of the hermes process (prefer pts/0)
-  local pty=""
-  if [ -r "/proc/17522/fd/0" ]; then
-    pty=$(readlink /proc/17522/fd/0 2>/dev/null | grep -o 'pts/[0-9]*' || echo "pts/0")
-  else
-    pty="pts/0"
-  fi
+  local pty="" p cmd
+  HERMES_BIN="$HOME/.hermes/hermes-agent/venv/bin/hermes"
+  for p in $(pgrep -f "$HERMES_BIN" 2>/dev/null); do
+    cmd=$(tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null)
+    echo "$cmd" | grep -qE "gateway|dashboard|--supervise" && continue
+    if [ -r "/proc/$p/fd/0" ]; then
+      pty=$(readlink "/proc/$p/fd/0" 2>/dev/null | grep -o 'pts/[0-9]*')
+      [ -n "$pty" ] && break
+    fi
+  done
+  [ -z "$pty" ] && pty="pts/0"
   # Overwrite the line, show a bullet character
   echo -ne '\r\b·' >"/dev/$pty" 2>/dev/null || true
 }
