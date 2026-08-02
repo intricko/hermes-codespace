@@ -15,6 +15,11 @@ if [[ "${1:-}" == "--test" ]]; then
   TEST_MODE=true
 fi
 
+# Resolve this script's own directory so checks don't depend on the cwd
+# (test mode is often invoked from the repo root or CI, not from .devcontainer/).
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SELF="$SCRIPT_DIR/keepalive.sh"
+
 fatal(){ echo "[keepalive] FATAL: $*" >&2; exit 1; }
 
 # Discover the VS Code server port (server-main) from listening sockets.
@@ -100,11 +105,11 @@ main(){
 test_keepalive(){
   echo "=== Hermes Keepalive Test Mode ==="
 
-  # Verify file exists and is executable
-  if [[ ! -f "$(pwd)/keepalive.sh" ]]; then
-    fatal "keepalive.sh not found"
+  # Verify file exists and is executable (resolved from script location)
+  if [[ ! -f "$SELF" ]]; then
+    fatal "keepalive.sh not found ($SELF)"
   fi
-  if [[ ! -x "$(pwd)/keepalive.sh" ]]; then
+  if [[ ! -x "$SELF" ]]; then
     fatal "keepalive.sh is not executable"
   fi
   echo "✅ keepalive.sh exists and is executable"
@@ -131,7 +136,7 @@ test_keepalive(){
   fi
 
   echo "✅ Keepalive test completed successfully"
-  echo "\nNote: This test does not start the full keepalive service loop;"
+  echo "Note: this test does not start the full keepalive service loop;"
   echo "it only validates the individual functions (port discovery, terminal write, HTTP ping)."
   exit 0
 }
