@@ -87,20 +87,20 @@ The **behavioral rule** (e.g., "load codespace skills before GitHub ops") MUST l
 **Problem:** MEMORY.md is written frequently (every behavioral decision)
 **Solution:** Make only *important* updates worthy of review
 
-**Approach:** 
+**Approach:**
 - Frequent runtime edits (immediate effect via symlink)
 - Manual commits for important changes (behavioral rule updates)
 
 ### Privacy and Data Control
 **Problem:** USER.md may contain sensitive user preferences
-**Solution:** 
+**Solution:**
 - Runtime stays private and ephemeral
 - Tracked copy provides controlled persistence
 - User can review and sanitize before committing
 
 ### Performance and Scalability
 **Problem:** Symlinking on every start could be redundant
-**Solution:** 
+**Solution:**
 - Symlinks are lightweight (filesystem operations)
 - Only one folder symlink is created (minimal overhead)
 - Implemented in post-create-cmd.sh (runs once) + a guard in start-hermes.sh
