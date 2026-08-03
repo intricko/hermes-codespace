@@ -44,6 +44,7 @@ jobs:
               - '.devcontainer/skills/**'
               - '.devcontainer/wiki/**'
               - '.devcontainer/mnemon/**'
+              - '.devcontainer/memories/**'
               - '.devcontainer/.hermes.md'
               - '.devcontainer/codespace-cleanup.sh'
             docs:
@@ -242,3 +243,42 @@ jobs:
             fi
           done
           echo "✅ All shell scripts valid"
+
+      - name: Validate symlink persistence (memories + skills)
+        run: |
+          echo "=== Validating symlink persistence ==="
+          REPO_ROOT="$(pwd)"
+          MEM_RUNTIME="$HOME/.hermes/memories"
+          MEM_TRACKED="$REPO_ROOT/.devcontainer/memories"
+          SKILLS_RUNTIME="$HOME/.hermes/skills/codespace"
+          SKILLS_TRACKED="$REPO_ROOT/.devcontainer/skills"
+          FAIL=0
+          if [ -L "$MEM_RUNTIME" ]; then
+            target="$(readlink "$MEM_RUNTIME")"
+            if [ "$target" = "$MEM_TRACKED" ]; then
+              echo "  ✅ Memories symlink correct -> $MEM_TRACKED"
+            else
+              echo "  ❌ Memories symlink points to '$target' (expected '$MEM_TRACKED')"
+              FAIL=1
+            fi
+          else
+            echo "  ❌ Memories runtime missing or not a symlink"
+            FAIL=1
+          fi
+          if [ -L "$SKILLS_RUNTIME" ]; then
+            target="$(readlink "$SKILLS_RUNTIME")"
+            if [ "$target" = "$SKILLS_TRACKED" ]; then
+              echo "  ✅ Skills symlink correct -> $SKILLS_TRACKED"
+            else
+              echo "  ❌ Skills symlink points to '$target' (expected '$SKILLS_TRACKED')"
+              FAIL=1
+            fi
+          else
+            echo "  ❌ Skills runtime missing or not a symlink"
+            FAIL=1
+          fi
+          if [ "$FAIL" -eq 0 ]; then
+            echo "✅ Symlink persistence valid"
+          else
+            exit 1
+          fi
